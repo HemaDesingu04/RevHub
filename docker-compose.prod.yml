@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    image: ${ECR_REGISTRY}/revhub-api-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      CONSUL_HOST: consul
+      SPRING_PROFILES_ACTIVE: production
+      DB_HOST: ${RDS_ENDPOINT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - consul
+
+  user-service:
+    image: ${ECR_REGISTRY}/revhub-user-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      CONSUL_HOST: consul
+      DB_HOST: ${RDS_ENDPOINT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BROKERS}
+      SPRING_PROFILES_ACTIVE: production
+      JWT_SECRET: ${JWT_SECRET}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+  post-service:
+    image: ${ECR_REGISTRY}/revhub-post-service:latest
+    ports:
+      - "8082:8082"
+    environment:
+      CONSUL_HOST: consul
+      DB_HOST: ${RDS_ENDPOINT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BROKERS}
+      SPRING_PROFILES_ACTIVE: production
+
+  # Add other services...
+
+networks:
+  revhub-network:
+    driver: bridge
