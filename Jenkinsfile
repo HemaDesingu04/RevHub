@@ -18,14 +18,14 @@ pipeline {
         stage('Build Maven Projects') {
             steps {
                 script {
-                    sh 'cd shared && mvn clean install -DskipTests'
+                    bat 'cd shared && mvn clean install -DskipTests'
                     
                     def services = ['api-gateway', 'user-service', 'post-service', 
                                   'social-service', 'chat-service', 'notification-service',
                                   'feed-service', 'search-service', 'saga-orchestrator']
                     
                     services.each { service ->
-                        sh "cd backend-services/${service} && mvn clean package -DskipTests"
+                        bat "cd backend-services\\${service} && mvn clean package -DskipTests"
                     }
                 }
             }
@@ -39,8 +39,8 @@ pipeline {
                                   'feed-service', 'search-service', 'saga-orchestrator']
                     
                     services.each { service ->
-                        sh "docker build -t ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER} backend-services/${service}"
-                        sh "docker tag ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER} ${ECR_REGISTRY}/revhub-${service}:latest"
+                        bat "docker build -t ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER} backend-services/${service}"
+                        bat "docker tag ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER} ${ECR_REGISTRY}/revhub-${service}:latest"
                     }
                 }
             }
@@ -49,15 +49,15 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 script {
-                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                    bat "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
                     
                     def services = ['api-gateway', 'user-service', 'post-service', 
                                   'social-service', 'chat-service', 'notification-service',
                                   'feed-service', 'search-service', 'saga-orchestrator']
                     
                     services.each { service ->
-                        sh "docker push ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER}"
-                        sh "docker push ${ECR_REGISTRY}/revhub-${service}:latest"
+                        bat "docker push ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER}"
+                        bat "docker push ${ECR_REGISTRY}/revhub-${service}:latest"
                     }
                 }
             }
@@ -66,7 +66,7 @@ pipeline {
         stage('Deploy to ECS') {
             steps {
                 script {
-                    sh "aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}"
+                    bat "aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}"
                 }
             }
         }
