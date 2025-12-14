@@ -46,27 +46,14 @@ pipeline {
             }
         }
         
-        stage('Push to ECR') {
+        stage('Local Deployment') {
             steps {
                 script {
-                    bat "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-                    
-                    def services = ['api-gateway', 'user-service', 'post-service', 
-                                  'social-service', 'chat-service', 'notification-service',
-                                  'feed-service', 'search-service', 'saga-orchestrator']
-                    
-                    services.each { service ->
-                        bat "docker push ${ECR_REGISTRY}/revhub-${service}:${BUILD_NUMBER}"
-                        bat "docker push ${ECR_REGISTRY}/revhub-${service}:latest"
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy to ECS') {
-            steps {
-                script {
-                    bat "aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment --region ${AWS_REGION}"
+                    bat '''
+                        echo "Docker images built successfully!"
+                        docker images | findstr revhub
+                        echo "Ready for deployment!"
+                    '''
                 }
             }
         }
