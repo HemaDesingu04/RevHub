@@ -343,8 +343,10 @@ npm install
 
 ## 📚 Documentation
 
-- [Docker Deployment Guide](DOCKER_DEPLOYMENT.md) 🐳 **NEW**
-- [Docker Quick Reference](DOCKER_QUICK_REFERENCE.md) 🐳 **NEW**
+- [AWS Deployment Guide](AWS_DEPLOYMENT.md) ☁️ **NEW**
+- [AWS Quick Reference](AWS_QUICK_REFERENCE.md) ☁️ **NEW**
+- [Docker Deployment Guide](DOCKER_DEPLOYMENT.md) 🐳
+- [Docker Quick Reference](DOCKER_QUICK_REFERENCE.md) 🐳
 - [Quick Start Guide](QUICK_START.md)
 - [Implementation Status](IMPLEMENTATION_STATUS.md)
 - [Infrastructure Guide](infrastructure/README.md)
@@ -362,6 +364,8 @@ npm install
 ✅ CORS configured
 ✅ JWT authentication
 ✅ Full Docker containerization 🐳
+✅ AWS cloud deployment ☁️
+✅ CI/CD with GitHub Actions 🔄
 ✅ Production-ready deployment
 
 ## 🏆 Status
@@ -379,17 +383,22 @@ This is a complete reference implementation. Feel free to use it as a template f
 
 ## 🚀 Get Started Now!
 
-### Docker (Recommended)
+### ☁️ AWS Deployment (Production)
+```bash
+scripts\aws-deploy.bat
+```
+
+### 🐳 Docker (Recommended for Local)
 ```bash
 START_DOCKER.bat
 ```
 
-### Local
+### 💻 Local Development
 ```bash
 START_REVHUB.bat
 ```
 
-Then open http://localhost:4200 in your browser!
+Then open http://localhost:4200 (local) or http://YOUR_AWS_IP:4200 (AWS) in your browser!
 
 ---
 
