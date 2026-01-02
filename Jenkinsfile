@@ -269,7 +269,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-registry-credentials') {
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-hub-credentials') {
                         def services = [
                             'api-gateway', 'user-service', 'post-service', 
                             'social-service', 'chat-service', 'notification-service',
