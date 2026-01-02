@@ -7,6 +7,7 @@ cd ..
 
 echo Stopping Docker containers...
 docker-compose down
+docker-compose -f docker-compose.frontend.yml down
 
 echo.
 echo ========================================

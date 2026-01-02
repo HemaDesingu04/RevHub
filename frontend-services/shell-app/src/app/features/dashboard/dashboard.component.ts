@@ -345,13 +345,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   likePost(post: any) {
     const postAuthor = post.username || post.author?.username || post.author;
+    console.log('Liking post:', post.id, 'by author:', postAuthor);
+    
     this.postService.toggleLike(post.id, postAuthor).subscribe({
       next: (response) => {
+        console.log('Like response:', response);
         post.likesCount = response.likesCount;
         post.isLiked = response.isLiked;
       },
       error: (error) => {
-        // Handle error
+        console.error('Error liking post:', error);
+        // Optimistic update - toggle like status locally
+        post.isLiked = !post.isLiked;
+        post.likesCount = post.isLiked ? (post.likesCount || 0) + 1 : Math.max(0, (post.likesCount || 0) - 1);
       }
     });
   }
@@ -783,7 +789,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.editPostContent.trim() && this.editingPost) {
       const updateData = {
         content: this.editPostContent,
-        visibility: this.editingPost.visibility || 'PUBLIC'
+        visibility: this.editingPost.visibility || 'PUBLIC',
+        imageUrl: this.editingPost.imageUrl || '',
+        videoUrl: this.editingPost.videoUrl || ''
       };
       
       this.postService.updatePost(this.editingPost.id, updateData).subscribe({

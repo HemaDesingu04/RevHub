@@ -30,14 +30,12 @@ public class UserController {
         return ResponseEntity.ok(userService.login(request));
     }
     
-    @GetMapping("/{username}")
-    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUserByUsername(username));
-    }
-    
-    @PutMapping("/{username}")
-    public ResponseEntity<UserDTO> updateProfile(@PathVariable String username, @RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(userService.updateProfile(username, userDTO));
+    @GetMapping("/profile")
+    public ResponseEntity<UserDTO> getCurrentUserProfile(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(userService.getUserById(Long.parseLong(userId)));
     }
     
     @PutMapping("/profile")
@@ -48,6 +46,11 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfileById(Long.parseLong(userId), userDTO));
     }
     
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("User Service is working!");
+    }
+    
     @GetMapping
     public ResponseEntity<List<UserDTO>> getAllUsers(@RequestParam(required = false) String search) {
         if (search != null && !search.trim().isEmpty()) {
@@ -56,8 +59,13 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
     
-    @GetMapping("/test")
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("User Service is working!");
+    @GetMapping("/{username}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getUserByUsername(username));
+    }
+    
+    @PutMapping("/{username}")
+    public ResponseEntity<UserDTO> updateProfile(@PathVariable String username, @RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.updateProfile(username, userDTO));
     }
 }

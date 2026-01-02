@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class PostService {
-  private apiUrl = 'http://localhost:8080/api/posts';
-  private socialUrl = 'http://localhost:8080/api/social';
+  private apiUrl = 'http://localhost:8090/api/posts';
+  private socialUrl = 'http://localhost:8090/api/social';
 
   constructor(private http: HttpClient) {}
 
@@ -41,10 +41,11 @@ export class PostService {
 
   toggleLike(postId: string, postAuthor?: string): Observable<any> {
     const username = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).username : '';
-    let url = `${this.socialUrl}/toggle-like/${postId}?username=${username}`;
+    let url = `${this.socialUrl}/toggle-like/${postId}?username=${encodeURIComponent(username)}`;
     if (postAuthor) {
-      url += `&postAuthor=${postAuthor}`;
+      url += `&postAuthor=${encodeURIComponent(postAuthor)}`;
     }
+    console.log('Toggle like URL:', url);
     return this.http.post(url, {});
   }
 

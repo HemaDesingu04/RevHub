@@ -1,17 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
+import { timeout } from 'rxjs/operators';
+import { MaterialModule } from '../shared/material.module';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, MaterialModule],
   template: `
     <div class="auth-container">
       <mat-card class="auth-card">
@@ -23,25 +21,25 @@ import { MatButtonModule } from '@angular/material/button';
         <form *ngIf="!showOtp" [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Username</mat-label>
-            <input matInput formControlName="username" required>
+            <input matInput formControlName="username" required autocomplete="username">
           </mat-form-field>
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Email</mat-label>
-            <input matInput type="email" formControlName="email" required>
+            <input matInput type="email" formControlName="email" required autocomplete="email">
           </mat-form-field>
           <div style="display: flex; gap: 10px;">
             <mat-form-field appearance="outline" style="flex: 1;">
               <mat-label>First Name</mat-label>
-              <input matInput formControlName="firstName" required>
+              <input matInput formControlName="firstName" required autocomplete="given-name">
             </mat-form-field>
             <mat-form-field appearance="outline" style="flex: 1;">
               <mat-label>Last Name</mat-label>
-              <input matInput formControlName="lastName" required>
+              <input matInput formControlName="lastName" required autocomplete="family-name">
             </mat-form-field>
           </div>
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password" required>
+            <input matInput type="password" formControlName="password" required autocomplete="new-password">
           </mat-form-field>
           <button mat-raised-button color="primary" type="submit" [disabled]="!registerForm.valid" class="auth-btn">
             {{loading ? 'Creating Account...' : 'Register'}}
@@ -79,7 +77,7 @@ import { MatButtonModule } from '@angular/material/button';
     .link-primary:hover { text-decoration: underline; }
   `]
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -99,10 +97,16 @@ export class RegisterComponent {
     otp: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
   });
   
+  ngOnInit() {
+    this.showOtp = false;
+  }
+  
   onSubmit() {
     if (this.registerForm.valid) {
       this.loading = true;
-      this.http.post('http://localhost:8080/api/auth/register', this.registerForm.value).subscribe({
+      this.http.post('/api/auth/register', this.registerForm.value)
+        .pipe(timeout(10000))
+        .subscribe({
         next: (response: any) => {
           this.loading = false;
           this.userEmail = this.registerForm.value.email || '';
@@ -120,10 +124,12 @@ export class RegisterComponent {
   onVerifyOtp() {
     if (this.otpForm.valid) {
       this.loading = true;
-      this.http.post('http://localhost:8080/api/auth/verify-otp', {
+      this.http.post('/api/auth/verify-otp', {
         email: this.userEmail,
         otp: this.otpForm.value.otp
-      }).subscribe({
+      })
+        .pipe(timeout(10000))
+        .subscribe({
         next: (response: any) => {
           this.loading = false;
           alert('Email verified successfully! Please login.');

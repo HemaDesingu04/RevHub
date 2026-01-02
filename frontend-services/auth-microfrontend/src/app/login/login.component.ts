@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -7,11 +7,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   template: `
     <div class="auth-container">
       <mat-card class="auth-card">
@@ -22,12 +23,12 @@ import { MatButtonModule } from '@angular/material/button';
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Username</mat-label>
-            <input matInput formControlName="username" required>
+            <input matInput formControlName="username" required autocomplete="username">
             <mat-icon matPrefix>person</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password" required>
+            <input matInput type="password" formControlName="password" required autocomplete="current-password">
             <mat-icon matPrefix>lock</mat-icon>
           </mat-form-field>
           <button mat-raised-button color="primary" type="submit" [disabled]="!loginForm.valid" class="auth-btn">
@@ -52,7 +53,7 @@ import { MatButtonModule } from '@angular/material/button';
     .link-primary:hover { text-decoration: underline; }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -63,10 +64,15 @@ export class LoginComponent {
     password: ['', Validators.required]
   });
   
+  ngOnInit() {
+    // Clear any cached form data
+    this.loginForm.reset();
+  }
+  
   onSubmit() {
     this.loading = true;
     if (this.loginForm.valid) {
-      this.http.post('http://localhost:8080/api/users/login', this.loginForm.value).subscribe({
+      this.http.post('/api/auth/login', this.loginForm.value).subscribe({
         next: (response: any) => {
           localStorage.setItem('token', response.token);
           localStorage.setItem('user', JSON.stringify(response.user));

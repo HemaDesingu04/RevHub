@@ -1,0 +1,43 @@
+jenkins:
+  systemMessage: "RevHub Microservices CI/CD Pipeline"
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 3
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin123"
+
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+
+tool:
+  git:
+    installations:
+      - name: "Default"
+        home: "git"
+
+  maven:
+    installations:
+      - name: "Maven-3.8"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.8.6"
+
+  nodejs:
+    installations:
+      - name: "NodeJS-18"
+        properties:
+          - installSource:
+              installers:
+                - nodeJSInstaller:
+                    id: "18.17.0"
+                    npmPackagesRefreshHours: 72

@@ -3,7 +3,7 @@ aws_region = "ap-south-1"
 
 # EC2 Configuration
 instance_type = "t3.large"
-key_name      = "revhub-deploy-key"
+key_name      = "revhub-new-key"
 
 # Project Configuration
 project_name = "revhub"

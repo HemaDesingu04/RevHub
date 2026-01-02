@@ -5,6 +5,7 @@ import com.revhub.userservice.dto.*;
 import com.revhub.userservice.model.User;
 import com.revhub.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final RestTemplate restTemplate;
+    @Qualifier("simpleRestTemplate")
+    private final RestTemplate simpleRestTemplate;
     private final EmailService emailService;
     
     public String register(RegisterRequest request) {
@@ -72,6 +74,12 @@ public class UserService {
         return new AuthResponse(token, toDTO(user));
     }
     
+    public UserDTO getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return toDTO(user);
+    }
+    
     public UserDTO getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -92,12 +100,12 @@ public class UserService {
             String socialServiceUrl = "http://" + socialServiceHost + "/api/social";
             
             // Get followers count
-            Object[] followers = restTemplate.getForObject(
+            Object[] followers = simpleRestTemplate.getForObject(
                 socialServiceUrl + "/followers/" + username, Object[].class);
             dto.setFollowersCount(followers != null ? followers.length : 0);
             
             // Get following count
-            Object[] following = restTemplate.getForObject(
+            Object[] following = simpleRestTemplate.getForObject(
                 socialServiceUrl + "/following/" + username, Object[].class);
             dto.setFollowingCount(following != null ? following.length : 0);
         } catch (Exception e) {

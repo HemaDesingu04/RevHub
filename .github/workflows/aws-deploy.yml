@@ -1,0 +1,163 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'corretto'
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Build shared modules
+      run: |
+        cd shared
+        mvn clean install -DskipTests
+        
+    - name: Build backend services
+      run: |
+        cd backend-services
+        for service in */; do
+          if [ -f "$service/pom.xml" ]; then
+            echo "Building $service"
+            cd "$service"
+            mvn clean package -DskipTests
+            cd ..
+          fi
+        done
+        
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to EC2
+      run: |
+        # Create deployment package
+        tar -czf revhub-deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='target' \
+          --exclude='.angular' \
+          --exclude='*.log' \
+          .
+        
+        # Copy to EC2
+        scp -i ~/.ssh/id_rsa revhub-deploy.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/
+        
+        # Deploy on EC2
+        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          
+          echo "=== Starting deployment at $(date) ==="
+          
+          # Extract deployment package
+          cd /home/ec2-user
+          rm -rf Microservices_RevHub-old || true
+          mv Microservices_RevHub Microservices_RevHub-old || true
+          tar -xzf revhub-deploy.tar.gz
+          mv Microservices_RevHub-* Microservices_RevHub || true
+          cd Microservices_RevHub
+          
+          # Set environment variables
+          export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+          export M2_HOME=/opt/maven
+          export PATH=$JAVA_HOME/bin:$M2_HOME/bin:$PATH
+          
+          # Stop existing services
+          echo "=== Stopping existing services ==="
+          docker-compose down || true
+          
+          # Build shared modules
+          echo "=== Building shared modules ==="
+          cd shared
+          mvn clean install -DskipTests
+          
+          # Build backend services
+          echo "=== Building backend services ==="
+          cd ../backend-services
+          for service in */; do
+            if [ -f "$service/pom.xml" ]; then
+              echo "Building $service"
+              cd "$service"
+              mvn clean package -DskipTests
+              cd ..
+            fi
+          done
+          
+          # Start services
+          echo "=== Starting Docker services ==="
+          cd ..
+          docker-compose up -d --build
+          
+          # Wait for services to start
+          echo "=== Waiting for services to start ==="
+          sleep 120
+          
+          # Health check
+          echo "=== Health check ==="
+          max_attempts=10
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              echo "✅ API Gateway is healthy"
+              break
+            else
+              echo "⏳ Attempt $attempt/$max_attempts: API Gateway not ready yet"
+              sleep 30
+              attempt=$((attempt + 1))
+            fi
+          done
+          
+          if [ $attempt -gt $max_attempts ]; then
+            echo "❌ API Gateway failed to start"
+            docker-compose logs api-gateway
+            exit 1
+          fi
+          
+          # Check other services
+          echo "=== Checking all services ==="
+          services=(8081 8082 8083 8084 8085 8086 8087 8088)
+          for port in "${services[@]}"; do
+            if curl -f http://localhost:$port/actuator/health > /dev/null 2>&1; then
+              echo "✅ Service on port $port is healthy"
+            else
+              echo "⚠️  Service on port $port is not responding"
+            fi
+          done
+          
+          echo "=== Deployment completed successfully at $(date) ==="
+          echo "Frontend: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):4200"
+          echo "API Gateway: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):8080"
+        EOF
+        
+    - name: Deployment Status
+      run: |
+        echo "🚀 Deployment completed!"
+        echo "Check your application at: http://${{ secrets.EC2_HOST }}:4200"
+        
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed!"
+        echo "Check the logs above for details."

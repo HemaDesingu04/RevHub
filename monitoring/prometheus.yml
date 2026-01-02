@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'jenkins'
+    static_configs:
+      - targets: ['jenkins:8080']
+    metrics_path: '/prometheus'
+
+  - job_name: 'revhub-services'
+    static_configs:
+      - targets:
+        - 'api-gateway:8080'
+        - 'user-service:8081'
+        - 'post-service:8082'
+        - 'social-service:8083'
+        - 'chat-service:8084'
+        - 'notification-service:8085'
+        - 'feed-service:8086'
+        - 'search-service:8087'
+        - 'saga-orchestrator:8088'
+    metrics_path: '/actuator/prometheus'

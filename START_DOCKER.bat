@@ -34,14 +34,14 @@ echo [3/4] Stopping existing containers...
 docker-compose down
 
 echo.
-echo [4/4] Starting all services in Docker...
+echo [4/4] Starting backend services in Docker...
 docker-compose up -d --build
 
 echo.
 echo ========================================
 echo   Waiting for services to start...
 echo ========================================
-timeout /t 30 /nobreak
+timeout /t 45 /nobreak
 
 echo.
 echo ========================================
@@ -54,7 +54,7 @@ echo ========================================
 echo   Access Points:
 echo ========================================
 echo   Frontend:        http://localhost:4200
-echo   API Gateway:     http://localhost:8080
+echo   API Gateway:     http://localhost:8090
 echo   Consul UI:       http://localhost:8500
 echo   User Service:    http://localhost:8081
 echo   Post Service:    http://localhost:8082

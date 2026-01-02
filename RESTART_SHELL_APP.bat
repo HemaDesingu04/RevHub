@@ -1,9 +1,0 @@
-@echo off
-echo Restarting Shell App with Proxy...
-cd frontend-services\shell-app
-echo Killing any existing Angular processes on port 4200...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :4200') do taskkill /F /PID %%a 2>nul
-echo Starting shell-app with proxy configuration...
-start "Shell App" cmd /k "npm start"
-echo Shell app starting on http://localhost:4200
-pause

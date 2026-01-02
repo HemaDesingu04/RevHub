@@ -168,53 +168,7 @@ resource "aws_instance" "revhub_instance" {
     encrypted   = true
   }
 
-  user_data = base64encode(<<-EOF
-#!/bin/bash
-yum update -y
-yum install -y git java-17-amazon-corretto-devel docker htop
-echo 'export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto' >> /etc/profile
-echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile
-cd /opt
-wget https://archive.apache.org/dist/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.tar.gz
-tar xzf apache-maven-3.9.4-bin.tar.gz
-ln -s apache-maven-3.9.4 maven
-echo 'export M2_HOME=/opt/maven' >> /etc/profile
-echo 'export PATH=/opt/maven/bin:$PATH' >> /etc/profile
-systemctl start docker
-systemctl enable docker
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-usermod -a -G docker ec2-user
-curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-yum install -y nodejs
-npm install -g @angular/cli
-mkdir -p /home/ec2-user/app
-chown ec2-user:ec2-user /home/ec2-user/app
-echo 'export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto' >> /home/ec2-user/.bashrc
-echo 'export M2_HOME=/opt/maven' >> /home/ec2-user/.bashrc
-echo 'export PATH=$JAVA_HOME/bin:$M2_HOME/bin:$PATH' >> /home/ec2-user/.bashrc
-echo "#!/bin/bash" > /home/ec2-user/health-check.sh
-echo "echo 'RevHub Health Check'" >> /home/ec2-user/health-check.sh
-echo "docker ps" >> /home/ec2-user/health-check.sh
-echo "curl -s http://localhost:8080/actuator/health || echo 'API Gateway not ready'" >> /home/ec2-user/health-check.sh
-chmod +x /home/ec2-user/health-check.sh
-chown ec2-user:ec2-user /home/ec2-user/health-check.sh
-echo "#!/bin/bash" > /home/ec2-user/deploy.sh
-echo "set -e" >> /home/ec2-user/deploy.sh
-echo "cd /home/ec2-user/app/revhub-microservices" >> /home/ec2-user/deploy.sh
-echo "git pull origin main" >> /home/ec2-user/deploy.sh
-echo "docker-compose down" >> /home/ec2-user/deploy.sh
-echo "cd shared && mvn clean install -DskipTests" >> /home/ec2-user/deploy.sh
-echo "cd ../backend-services" >> /home/ec2-user/deploy.sh
-echo "find . -name pom.xml -execdir mvn clean package -DskipTests \;" >> /home/ec2-user/deploy.sh
-echo "cd .. && docker-compose up -d --build" >> /home/ec2-user/deploy.sh
-echo "sleep 90" >> /home/ec2-user/deploy.sh
-echo "curl -f http://localhost:8080/actuator/health" >> /home/ec2-user/deploy.sh
-chmod +x /home/ec2-user/deploy.sh
-chown ec2-user:ec2-user /home/ec2-user/deploy.sh
-echo "User data completed" >> /var/log/user-data.log
-EOF
-  )
+  user_data = base64encode(templatefile("${path.module}/user-data.sh", {}))
 
   tags = {
     Name = "${var.project_name}-instance"
