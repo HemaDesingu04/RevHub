@@ -8,12 +8,6 @@ pipeline {
         GIT_COMMIT_SHORT = "${env.GIT_COMMIT?.take(7)}"
     }
     
-    tools {
-        maven 'Maven-3.8'
-        nodejs 'NodeJS-18'
-        dockerTool 'Docker'
-    }
-    
     stages {
         stage('Checkout') {
             steps {
